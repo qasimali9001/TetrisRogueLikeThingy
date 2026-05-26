@@ -42,6 +42,13 @@ export interface ControlActionBindings {
 
 export interface SettingsConfig {
   controls: ControlActionBindings;
+  timing: {
+    dasFrames: number;
+    arrFrames: number;
+    sdfFramesPerCell: number;
+    lockDelayFrames: number;
+    gravityFramesPerCell: number;
+  };
 }
 
 export interface GameConfig {
@@ -89,6 +96,13 @@ export const defaultGameConfig: GameConfig = {
       rotateCcw: ["KeyZ"],
       rotate180: ["KeyA"],
       hold: ["ShiftLeft", "KeyC"]
+    },
+    timing: {
+      dasFrames: 10,
+      arrFrames: 2,
+      sdfFramesPerCell: 2,
+      lockDelayFrames: 30,
+      gravityFramesPerCell: 60
     }
   }
 };

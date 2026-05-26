@@ -26,7 +26,16 @@ export class SettingsStore {
       if (parsed.version !== STORAGE_VERSION) {
         return structuredClone(this.fallback);
       }
-      return parsed.settings;
+      return {
+        controls: {
+          ...this.fallback.controls,
+          ...parsed.settings.controls
+        },
+        timing: {
+          ...this.fallback.timing,
+          ...parsed.settings.timing
+        }
+      };
     } catch {
       return structuredClone(this.fallback);
     }

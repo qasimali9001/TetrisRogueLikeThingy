@@ -19,4 +19,71 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  position: relative;
+}
+
+.settings-panel {
+  position: absolute;
+  right: 16px;
+  top: 320px;
+  width: 280px;
+  padding: 10px 12px;
+  border: 1px solid #2c4f72;
+  background: rgba(7, 12, 24, 0.85);
+  color: #d6e8ff;
+  z-index: 5;
+}
+
+.settings-panel h2 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+}
+
+.settings-grid {
+  display: grid;
+  gap: 6px;
+}
+
+.settings-row {
+  display: grid;
+  grid-template-columns: 88px 1fr 38px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.settings-row input {
+  width: 100%;
+}
+
+.settings-value {
+  text-align: right;
+  color: #8fd8ff;
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-hint {
+  margin: 8px 0 0;
+  color: #84a4c7;
+  font-size: 11px;
+}
+
+.settings-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.settings-reset {
+  border: 1px solid #2c4f72;
+  background: #12233c;
+  color: #d6e8ff;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.settings-reset:hover {
+  background: #1a3357;
 }

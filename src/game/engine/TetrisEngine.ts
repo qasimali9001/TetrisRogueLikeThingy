@@ -1,4 +1,4 @@
-import type { GameConfig, PieceType } from "../config/gameConfig";
+import type { GameConfig, PieceType, TimingConfig } from "../config/gameConfig";
 import type { EngineViewState } from "../core/GameState";
 import { BoardModel } from "./board/BoardModel";
 import type { ClearType } from "./combat/lineClearModel";
@@ -18,6 +18,7 @@ export class TetrisEngine {
   private readonly garbageQueue = new GarbageQueue();
   private readonly input: KeyboardInput;
   private readonly horizontalRepeat: HorizontalRepeatController;
+  private timing: TimingConfig;
 
   private activePiece: ActivePiece | null = null;
   private holdPiece: PieceType | null = null;
@@ -40,11 +41,20 @@ export class TetrisEngine {
     this.config = config;
     this.board = new BoardModel(config.board);
     this.input = input;
+    this.timing = structuredClone(config.timing);
     this.horizontalRepeat = new HorizontalRepeatController({
-      dasMs: this.config.timing.dasMs,
-      arrMs: this.config.timing.arrMs
+      dasMs: this.timing.dasMs,
+      arrMs: this.timing.arrMs
     });
     this.spawnNewPiece();
+  }
+
+  public updateTiming(timing: TimingConfig): void {
+    this.timing = structuredClone(timing);
+    this.horizontalRepeat.setConfig({
+      dasMs: this.timing.dasMs,
+      arrMs: this.timing.arrMs
+    });
   }
 
   public update(deltaMs: number): void {
@@ -187,7 +197,7 @@ export class TetrisEngine {
       return;
     }
 
-    const gravityStepMs = 1000 / this.config.timing.gravityCellsPerSecond;
+    const gravityStepMs = 1000 / this.timing.gravityCellsPerSecond;
     this.gravityAccumulatorMs += deltaMs;
 
     while (this.gravityAccumulatorMs >= gravityStepMs) {
@@ -198,7 +208,7 @@ export class TetrisEngine {
     }
 
     if (this.input.isActionDown("softDrop")) {
-      const softStepMs = 1000 / this.config.timing.sdfCellsPerSecond;
+      const softStepMs = 1000 / this.timing.sdfCellsPerSecond;
       this.softDropAccumulatorMs += deltaMs;
       while (this.softDropAccumulatorMs >= softStepMs) {
         this.softDropAccumulatorMs -= softStepMs;
@@ -212,7 +222,7 @@ export class TetrisEngine {
 
     if (!this.canMove(0, 1)) {
       this.lockTimerMs += deltaMs;
-      if (this.lockTimerMs >= this.config.timing.lockDelayMs) {
+      if (this.lockTimerMs >= this.timing.lockDelayMs) {
         this.lockActivePiece();
       }
     } else {
