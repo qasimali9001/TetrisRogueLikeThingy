@@ -26,6 +26,10 @@ export class BagRandomizer {
     return this.queue.slice(0, count);
   }
 
+  public reset(): void {
+    this.queue = [];
+  }
+
   private refillIfNeeded(): void {
     if (this.queue.length === 0) {
       this.queue = this.createShuffledBag();

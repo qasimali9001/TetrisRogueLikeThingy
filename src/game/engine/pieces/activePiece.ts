@@ -10,10 +10,11 @@ export interface ActivePiece {
 export const createSpawnPiece = (
   type: PieceType,
   boardWidth: number,
-  spawnY: number
+  spawnY: number,
+  rotation: number
 ): ActivePiece => ({
   type,
-  rotation: 0,
+  rotation,
   x: Math.floor(boardWidth / 2),
   y: spawnY
 });

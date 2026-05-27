@@ -11,6 +11,7 @@ export interface TimingConfig {
   lockDelayMs: number;
   dasMs: number;
   arrMs: number;
+  dcdMs: number;
   sdfCellsPerSecond: number;
 }
 
@@ -38,6 +39,7 @@ export interface ControlActionBindings {
   rotateCcw: string[];
   rotate180: string[];
   hold: string[];
+  resetBoard: string[];
 }
 
 export interface SettingsConfig {
@@ -45,6 +47,7 @@ export interface SettingsConfig {
   timing: {
     dasFrames: number;
     arrFrames: number;
+    dcdFrames: number;
     sdfFramesPerCell: number;
     lockDelayFrames: number;
     gravityFramesPerCell: number;
@@ -71,6 +74,7 @@ export const defaultGameConfig: GameConfig = {
     lockDelayMs: 500,
     dasMs: 167,
     arrMs: 33,
+    dcdMs: 0,
     sdfCellsPerSecond: 30
   },
   attack: {
@@ -92,14 +96,16 @@ export const defaultGameConfig: GameConfig = {
       moveRight: ["ArrowRight"],
       softDrop: ["ArrowDown"],
       hardDrop: ["Space"],
-      rotateCw: ["ArrowUp", "KeyX"],
+      rotateCw: ["ArrowUp"],
       rotateCcw: ["KeyZ"],
       rotate180: ["KeyA"],
-      hold: ["ShiftLeft", "KeyC"]
+      hold: ["ShiftLeft", "KeyC"],
+      resetBoard: ["KeyR"]
     },
     timing: {
       dasFrames: 10,
       arrFrames: 2,
+      dcdFrames: 0,
       sdfFramesPerCell: 2,
       lockDelayFrames: 30,
       gravityFramesPerCell: 60

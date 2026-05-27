@@ -8,6 +8,7 @@ export const timingSettingsToRuntimeTiming = (
 ): TimingConfig => ({
   dasMs: timingSettings.dasFrames * MS_PER_FRAME,
   arrMs: timingSettings.arrFrames * MS_PER_FRAME,
+  dcdMs: timingSettings.dcdFrames * MS_PER_FRAME,
   lockDelayMs: timingSettings.lockDelayFrames * MS_PER_FRAME,
   gravityCellsPerSecond: FRAMES_PER_SECOND / Math.max(1, timingSettings.gravityFramesPerCell),
   sdfCellsPerSecond: FRAMES_PER_SECOND / Math.max(1, timingSettings.sdfFramesPerCell)

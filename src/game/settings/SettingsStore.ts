@@ -29,7 +29,9 @@ export class SettingsStore {
       return {
         controls: {
           ...this.fallback.controls,
-          ...parsed.settings.controls
+          ...parsed.settings.controls,
+          rotateCw: ["ArrowUp"],
+          rotateCcw: ["KeyZ"]
         },
         timing: {
           ...this.fallback.timing,

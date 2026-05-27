@@ -3,6 +3,7 @@ import type { SettingsConfig } from "../config/gameConfig";
 type TimingKey =
   | "dasFrames"
   | "arrFrames"
+  | "dcdFrames"
   | "sdfFramesPerCell"
   | "lockDelayFrames"
   | "gravityFramesPerCell";
@@ -18,6 +19,7 @@ interface SliderDefinition {
 const SLIDERS: SliderDefinition[] = [
   { key: "dasFrames", label: "DAS (frames)", min: 0, max: 30, step: 1 },
   { key: "arrFrames", label: "ARR (frames)", min: 0, max: 10, step: 1 },
+  { key: "dcdFrames", label: "DCD (frames)", min: 0, max: 10, step: 1 },
   { key: "sdfFramesPerCell", label: "SDF (f/cell)", min: 1, max: 20, step: 1 },
   { key: "lockDelayFrames", label: "Lock (frames)", min: 1, max: 60, step: 1 },
   { key: "gravityFramesPerCell", label: "Gravity (f/cell)", min: 1, max: 120, step: 1 }
@@ -29,6 +31,7 @@ interface CreateSettingsPanelOptions {
   defaultSettings: SettingsConfig;
   onTimingChange: (timing: SettingsConfig["timing"]) => void;
   onSettingsChange: (settings: SettingsConfig) => void;
+  onBoardReset: () => void;
 }
 
 export const createSettingsPanel = ({
@@ -36,7 +39,8 @@ export const createSettingsPanel = ({
   initialSettings,
   defaultSettings,
   onTimingChange,
-  onSettingsChange
+  onSettingsChange,
+  onBoardReset
 }: CreateSettingsPanelOptions): void => {
   const panel = document.createElement("section");
   panel.className = "settings-panel";
@@ -102,7 +106,13 @@ export const createSettingsPanel = ({
     onTimingChange({ ...state.timing });
     onSettingsChange(structuredClone(state));
   });
-  actions.appendChild(resetButton);
+  const resetBoardButton = document.createElement("button");
+  resetBoardButton.className = "settings-reset";
+  resetBoardButton.type = "button";
+  resetBoardButton.textContent = "Reset Board (R)";
+  resetBoardButton.addEventListener("click", onBoardReset);
+
+  actions.append(resetButton, resetBoardButton);
 
   const hint = document.createElement("p");
   hint.className = "settings-hint";

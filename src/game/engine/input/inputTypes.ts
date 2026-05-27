@@ -6,4 +6,5 @@ export type InputAction =
   | "rotateCw"
   | "rotateCcw"
   | "rotate180"
-  | "hold";
+  | "hold"
+  | "resetBoard";

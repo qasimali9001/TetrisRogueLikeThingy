@@ -39,4 +39,8 @@ export class GarbageQueue {
   public snapshot(): GarbagePacket[] {
     return this.queue.map((packet) => ({ ...packet }));
   }
+
+  public clear(): void {
+    this.queue.length = 0;
+  }
 }

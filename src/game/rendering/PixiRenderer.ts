@@ -14,13 +14,13 @@ const HOLD_PANEL_HEIGHT = 94;
 const NEXT_SLOT_HEIGHT = 44;
 
 const PIECE_COLORS: Record<PieceType, number> = {
-  I: 0x36e4ff,
-  O: 0xfef244,
-  T: 0xb967ff,
-  S: 0xff5e6c,
-  Z: 0x59d972,
-  J: 0x5887ff,
-  L: 0xffab4d
+  I: 0x00c8ff,
+  O: 0xffd800,
+  T: 0xa000f0,
+  S: 0x00e436,
+  Z: 0xff004d,
+  J: 0x1e65f3,
+  L: 0xff8c1a
 };
 
 export class PixiRenderer {
@@ -149,7 +149,8 @@ export class PixiRenderer {
   }
 
   private drawMiniPiece(pieceType: PieceType, centerX: number, centerY: number): void {
-    const shape = pieceDefinitions[pieceType].rotations[0];
+    const definition = pieceDefinitions[pieceType];
+    const shape = definition.rotations[definition.spawnRotation];
     const minX = Math.min(...shape.map((b) => b.x));
     const maxX = Math.max(...shape.map((b) => b.x));
     const minY = Math.min(...shape.map((b) => b.y));

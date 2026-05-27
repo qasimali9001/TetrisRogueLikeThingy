@@ -8,6 +8,7 @@ import { HorizontalRepeatController } from "./input/horizontalRepeat";
 import { KeyboardInput } from "./input/KeyboardInput";
 import { createSpawnPiece, type ActivePiece } from "./pieces/activePiece";
 import { BagRandomizer } from "./pieces/bagRandomizer";
+import { pieceDefinitions } from "./pieces/pieceDefinitions";
 import { getPieceCells, isPiecePositionValid, lockPieceToBoard } from "./pieces/piecePhysics";
 import { getSrsKickOffsets } from "./rotation/srs";
 
@@ -44,7 +45,8 @@ export class TetrisEngine {
     this.timing = structuredClone(config.timing);
     this.horizontalRepeat = new HorizontalRepeatController({
       dasMs: this.timing.dasMs,
-      arrMs: this.timing.arrMs
+      arrMs: this.timing.arrMs,
+      dcdMs: this.timing.dcdMs
     });
     this.spawnNewPiece();
   }
@@ -53,11 +55,17 @@ export class TetrisEngine {
     this.timing = structuredClone(timing);
     this.horizontalRepeat.setConfig({
       dasMs: this.timing.dasMs,
-      arrMs: this.timing.arrMs
+      arrMs: this.timing.arrMs,
+      dcdMs: this.timing.dcdMs
     });
   }
 
   public update(deltaMs: number): void {
+    if (this.input.consumeAction("resetBoard")) {
+      this.resetBoard();
+      return;
+    }
+
     if (!this.activePiece) {
       return;
     }
@@ -105,10 +113,29 @@ export class TetrisEngine {
     };
   }
 
+  public resetBoard(): void {
+    this.board.clearAll();
+    this.randomizer.reset();
+    this.garbageQueue.clear();
+    this.horizontalRepeat.reset();
+    this.activePiece = null;
+    this.holdPiece = null;
+    this.holdConsumedThisTurn = false;
+    this.comboChain = -1;
+    this.backToBackChain = false;
+    this.lastAttackSent = 0;
+    this.lastClearType = "none";
+    this.lastSuccessfulAction = "none";
+    this.lastRotationKickIndex = null;
+    this.resetFallAccumulators();
+    this.spawnNewPiece();
+  }
+
   private spawnNewPiece(): void {
     const next = this.randomizer.next();
     const spawnY = this.board.hiddenRows - 2;
-    this.activePiece = createSpawnPiece(next, this.board.width, spawnY);
+    const spawnRotation = pieceDefinitions[next].spawnRotation;
+    this.activePiece = createSpawnPiece(next, this.board.width, spawnY, spawnRotation);
     this.holdConsumedThisTurn = false;
     this.lastSuccessfulAction = "none";
     this.lastRotationKickIndex = null;
@@ -117,7 +144,11 @@ export class TetrisEngine {
 
     if (!this.activePiece || !isPiecePositionValid(this.board, this.activePiece)) {
       this.activePiece = null;
+      return;
     }
+
+    // TETR.IO-like DCD: apply DAS cut when a piece is spawned.
+    this.horizontalRepeat.applyDasCutDelay();
   }
 
   private processRotationInput(): void {
@@ -159,10 +190,12 @@ export class TetrisEngine {
 
     const incomingType = this.activePiece.type;
     if (this.holdPiece) {
+      const spawnRotation = pieceDefinitions[this.holdPiece].spawnRotation;
       this.activePiece = createSpawnPiece(
         this.holdPiece,
         this.board.width,
-        this.board.hiddenRows - 2
+        this.board.hiddenRows - 2,
+        spawnRotation
       );
     } else {
       this.spawnNewPiece();
@@ -272,6 +305,8 @@ export class TetrisEngine {
         this.activePiece = candidate;
         this.lastSuccessfulAction = "rotate";
         this.lastRotationKickIndex = index;
+        // TETR.IO-like DCD: apply DAS cut on successful rotations.
+        this.horizontalRepeat.applyDasCutDelay();
         this.applyGroundedLockReset(wasGrounded, true);
         return;
       }

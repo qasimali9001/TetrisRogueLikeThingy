@@ -41,7 +41,8 @@ export const bootstrapGame = async (): Promise<void> => {
     initialSettings: settings,
     defaultSettings: defaultGameConfig.settings,
     onTimingChange: (timingSettings) => engine.updateTiming(timingSettingsToRuntimeTiming(timingSettings)),
-    onSettingsChange: (updatedSettings) => settingsStore.save(updatedSettings)
+    onSettingsChange: (updatedSettings) => settingsStore.save(updatedSettings),
+    onBoardReset: () => engine.resetBoard()
   });
 
   gameLoop.start();

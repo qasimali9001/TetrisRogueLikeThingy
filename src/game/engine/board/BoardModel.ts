@@ -85,6 +85,14 @@ export class BoardModel {
     return true;
   }
 
+  public clearAll(): void {
+    for (let y = 0; y < this.totalHeight; y += 1) {
+      for (let x = 0; x < this.width; x += 1) {
+        this.grid[y][x] = null;
+      }
+    }
+  }
+
   public getVisibleRows(): BoardCell[][] {
     return this.grid.slice(this.hiddenRows).map((row) => [...row]);
   }

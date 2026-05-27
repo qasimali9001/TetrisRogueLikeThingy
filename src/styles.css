@@ -73,6 +73,7 @@ body {
   margin-top: 8px;
   display: flex;
   justify-content: flex-end;
+  gap: 6px;
 }
 
 .settings-reset {
