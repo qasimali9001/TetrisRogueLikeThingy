@@ -1,6 +1,9 @@
 import type { GameConfig, PieceType, TimingConfig } from "../config/gameConfig";
-import type { EngineViewState } from "../core/GameState";
+import type { EngineViewState, GameMode } from "../core/GameState";
 import { BoardModel } from "./board/BoardModel";
+import { CombatLoopOrchestrator } from "./combat/CombatLoopOrchestrator";
+import { resolveEnemyDamage, resolveShieldGain } from "./combat/damageResolver";
+import { EnemyAttackController } from "./combat/EnemyAttackController";
 import type { ClearType } from "./combat/lineClearModel";
 import { resolveLockCombat } from "./combat/lineClearModel";
 import { GarbageQueue } from "./garbage/GarbageQueue";
@@ -17,9 +20,12 @@ export class TetrisEngine {
   private readonly board: BoardModel;
   private readonly randomizer = new BagRandomizer();
   private readonly garbageQueue = new GarbageQueue();
+  private readonly enemyAttackController: EnemyAttackController;
+  private readonly combatLoop: CombatLoopOrchestrator;
   private readonly input: KeyboardInput;
   private readonly horizontalRepeat: HorizontalRepeatController;
   private timing: TimingConfig;
+  private mode: GameMode;
 
   private activePiece: ActivePiece | null = null;
   private holdPiece: PieceType | null = null;
@@ -36,19 +42,33 @@ export class TetrisEngine {
   private comboChain = -1;
   private backToBackChain = false;
   private lastAttackSent = 0;
+  private shieldLines = 0;
+  private lastShieldGain = 0;
+  private lastCounteredLines = 0;
   private lastClearType: ClearType = "none";
 
-  public constructor(config: GameConfig, input: KeyboardInput) {
+  public constructor(config: GameConfig, input: KeyboardInput, mode: GameMode = "vs") {
     this.config = config;
     this.board = new BoardModel(config.board);
     this.input = input;
     this.timing = structuredClone(config.timing);
+    this.enemyAttackController = new EnemyAttackController(config.combat.attack);
+    this.combatLoop = new CombatLoopOrchestrator(config.combat.name, config.combat.maxHp);
     this.horizontalRepeat = new HorizontalRepeatController({
       dasMs: this.timing.dasMs,
       arrMs: this.timing.arrMs,
       dcdMs: this.timing.dcdMs
     });
+    this.mode = mode;
     this.spawnNewPiece();
+  }
+
+  public setMode(mode: GameMode): void {
+    if (this.mode === mode) {
+      return;
+    }
+    this.mode = mode;
+    this.resetBoard();
   }
 
   public updateTiming(timing: TimingConfig): void {
@@ -68,6 +88,14 @@ export class TetrisEngine {
 
     if (!this.activePiece) {
       return;
+    }
+
+    if (this.mode === "vs" && this.combatLoop.isActive()) {
+      this.enemyAttackController.update(deltaMs, this.garbageQueue);
+      // Resolve landed enemy packets immediately so attacks are visible and cannot silently stall.
+      if (!this.enemyAttackController.hasIncomingAttack()) {
+        this.applyEnemyGarbagePressure();
+      }
     }
 
     this.processRotationInput();
@@ -99,7 +127,10 @@ export class TetrisEngine {
             .map((cell) => ({ x: cell.x, y: cell.y - this.board.hiddenRows }))
         : [];
 
+    const enemyUiState = this.enemyAttackController.getUiState();
+
     return {
+      mode: this.mode,
       board: this.board.getVisibleRows(),
       activeCells,
       ghostCells,
@@ -109,7 +140,24 @@ export class TetrisEngine {
       comboChain: this.comboChain,
       backToBackChain: this.backToBackChain,
       lastAttackSent: this.lastAttackSent,
-      lastClearType: this.lastClearType
+      lastClearType: this.lastClearType,
+      combat: {
+        ...this.combatLoop.getState(),
+        shieldLines: this.shieldLines,
+        lastShieldGain: this.lastShieldGain,
+        lastCounteredLines: this.lastCounteredLines,
+        ...(this.mode === "vs"
+          ? enemyUiState
+          : {
+              hasIncomingAttack: false,
+              incomingAttackLines: 0,
+              counterWindowMsRemaining: 0,
+              counterWindowMsTotal: enemyUiState.counterWindowMsTotal,
+              counterWindowProgress: 0,
+              msUntilNextAttack: 0,
+              nextAttackCycleProgress: 0
+            })
+      }
     };
   }
 
@@ -124,7 +172,12 @@ export class TetrisEngine {
     this.comboChain = -1;
     this.backToBackChain = false;
     this.lastAttackSent = 0;
+    this.shieldLines = 0;
+    this.lastShieldGain = 0;
+    this.lastCounteredLines = 0;
     this.lastClearType = "none";
+    this.enemyAttackController.reset();
+    this.combatLoop.reset();
     this.lastSuccessfulAction = "none";
     this.lastRotationKickIndex = null;
     this.resetFallAccumulators();
@@ -144,6 +197,9 @@ export class TetrisEngine {
 
     if (!this.activePiece || !isPiecePositionValid(this.board, this.activePiece)) {
       this.activePiece = null;
+      if (this.mode === "vs") {
+        this.combatLoop.markPlayerDefeat();
+      }
       return;
     }
 
@@ -219,8 +275,8 @@ export class TetrisEngine {
       return false;
     }
     this.activePiece.y = ghostY;
-    this.lastSuccessfulAction = "fall";
-    this.lastRotationKickIndex = null;
+    // Preserve the last manipulation action so T-spin detection remains valid
+    // when a rotate is followed by hard drop.
     this.lockActivePiece();
     return true;
   }
@@ -330,6 +386,7 @@ export class TetrisEngine {
     }
     const lockedPiece = this.activePiece;
     lockPieceToBoard(this.board, lockedPiece);
+    this.activePiece = null;
     const linesCleared = this.board.clearLines();
     const spin = this.detectTSpin(lockedPiece, this.lastSuccessfulAction === "rotate", linesCleared);
     const perfectClear = linesCleared > 0 && this.board.isCompletelyEmpty();
@@ -348,10 +405,22 @@ export class TetrisEngine {
     this.comboChain = lockResult.comboChain;
     this.backToBackChain = lockResult.backToBackChain;
     this.lastClearType = lockResult.clearType;
-    this.lastAttackSent = this.garbageQueue.cancel(lockResult.attackSent);
-
+    if (this.mode === "vs") {
+      this.lastShieldGain = resolveShieldGain(this.config.combat.shield, lockResult);
+      this.shieldLines += this.lastShieldGain;
+      this.combatLoop.applyPlayerDamage(resolveEnemyDamage(this.config.combat.damage, lockResult));
+      this.lastCounteredLines = this.enemyAttackController.counterIncoming(lockResult.linesCleared);
+      const leftoverAttack = Math.max(lockResult.attackSent - this.lastCounteredLines, 0);
+      this.lastAttackSent = this.garbageQueue.cancel(leftoverAttack);
+    } else {
+      this.lastShieldGain = 0;
+      this.lastCounteredLines = 0;
+      this.lastAttackSent = 0;
+    }
     this.resetFallAccumulators();
-    this.spawnNewPiece();
+    if (this.mode === "zen" || this.combatLoop.isActive()) {
+      this.spawnNewPiece();
+    }
   }
 
   private resetFallAccumulators(): void {
@@ -443,6 +512,28 @@ export class TetrisEngine {
           { x: pivot.x - 1, y: pivot.y - 1 },
           { x: pivot.x - 1, y: pivot.y + 1 }
         ];
+    }
+  }
+
+  private applyEnemyGarbagePressure(): void {
+    const packet = this.garbageQueue.popNext();
+    if (!packet) {
+      return;
+    }
+
+    const blockedByShield = Math.min(this.shieldLines, packet.amount);
+    this.shieldLines -= blockedByShield;
+    const remainingAttackLines = packet.amount - blockedByShield;
+
+    let didOverflow = false;
+    for (let index = 0; index < remainingAttackLines; index += 1) {
+      const overflowed = this.board.addGarbageLine(packet.holeColumn);
+      didOverflow = didOverflow || overflowed;
+    }
+
+    if (didOverflow) {
+      this.combatLoop.markPlayerDefeat();
+      this.activePiece = null;
     }
   }
 

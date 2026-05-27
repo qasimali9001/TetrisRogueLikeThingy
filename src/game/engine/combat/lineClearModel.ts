@@ -30,6 +30,7 @@ export interface LockResolutionResult {
   comboChain: number;
   backToBackChain: boolean;
   attackSent: number;
+  b2bBonusApplied: boolean;
   perfectClear: boolean;
   isTSpin: boolean;
   isMini: boolean;
@@ -99,6 +100,7 @@ export const resolveLockCombat = (
     comboChain: nextComboChain,
     backToBackChain: nextBackToBackChain,
     attackSent,
+    b2bBonusApplied: b2bBonusActive,
     perfectClear: input.perfectClear,
     isTSpin: input.isTSpin,
     isMini: input.isMini

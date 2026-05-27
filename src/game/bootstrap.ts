@@ -7,6 +7,7 @@ import { KeyboardInput } from "./engine/input/KeyboardInput";
 import { PixiRenderer } from "./rendering/PixiRenderer";
 import { SettingsStore } from "./settings/SettingsStore";
 import { createSettingsPanel } from "./ui/createSettingsPanel";
+import type { GameMode } from "./core/GameState";
 
 export const bootstrapGame = async (): Promise<void> => {
   const host = document.getElementById("app");
@@ -25,9 +26,10 @@ export const bootstrapGame = async (): Promise<void> => {
   const settings = settingsStore.load();
   const keyboardInput = new KeyboardInput(settings.controls);
   const config = structuredClone(defaultGameConfig);
+  let gameMode: GameMode = "vs";
   config.timing = timingSettingsToRuntimeTiming(settings.timing);
 
-  const engine = new TetrisEngine(config, keyboardInput);
+  const engine = new TetrisEngine(config, keyboardInput, gameMode);
   const renderer = new PixiRenderer(app);
   const gameLoop = new GameLoop({
     update: (deltaMs) => {
@@ -40,6 +42,11 @@ export const bootstrapGame = async (): Promise<void> => {
     host,
     initialSettings: settings,
     defaultSettings: defaultGameConfig.settings,
+    initialMode: gameMode,
+    onModeChange: (mode) => {
+      gameMode = mode;
+      engine.setMode(gameMode);
+    },
     onTimingChange: (timingSettings) => engine.updateTiming(timingSettingsToRuntimeTiming(timingSettings)),
     onSettingsChange: (updatedSettings) => settingsStore.save(updatedSettings),
     onBoardReset: () => engine.resetBoard()

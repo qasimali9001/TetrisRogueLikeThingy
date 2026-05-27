@@ -1,4 +1,5 @@
 import type { SettingsConfig } from "../config/gameConfig";
+import type { GameMode } from "../core/GameState";
 
 type TimingKey =
   | "dasFrames"
@@ -29,6 +30,8 @@ interface CreateSettingsPanelOptions {
   host: HTMLElement;
   initialSettings: SettingsConfig;
   defaultSettings: SettingsConfig;
+  initialMode: GameMode;
+  onModeChange: (mode: GameMode) => void;
   onTimingChange: (timing: SettingsConfig["timing"]) => void;
   onSettingsChange: (settings: SettingsConfig) => void;
   onBoardReset: () => void;
@@ -38,6 +41,8 @@ export const createSettingsPanel = ({
   host,
   initialSettings,
   defaultSettings,
+  initialMode,
+  onModeChange,
   onTimingChange,
   onSettingsChange,
   onBoardReset
@@ -47,6 +52,7 @@ export const createSettingsPanel = ({
   panel.innerHTML = `<h2>Tuning</h2>`;
 
   const state: SettingsConfig = structuredClone(initialSettings);
+  let modeState: GameMode = initialMode;
   const controls = document.createElement("div");
   controls.className = "settings-grid";
   const sliderInputs = new Map<TimingKey, HTMLInputElement>();
@@ -86,6 +92,23 @@ export const createSettingsPanel = ({
 
   const actions = document.createElement("div");
   actions.className = "settings-actions";
+  const modeRow = document.createElement("div");
+  modeRow.className = "mode-toggle";
+  const modeLabel = document.createElement("span");
+  modeLabel.textContent = "Mode";
+  const modeSelect = document.createElement("select");
+  modeSelect.className = "mode-select";
+  modeSelect.innerHTML = `
+    <option value="zen">Practice (Zen)</option>
+    <option value="vs">VS (AI)</option>
+  `;
+  modeSelect.value = modeState;
+  modeSelect.addEventListener("change", () => {
+    modeState = modeSelect.value === "zen" ? "zen" : "vs";
+    onModeChange(modeState);
+  });
+  modeRow.append(modeLabel, modeSelect);
+
   const resetButton = document.createElement("button");
   resetButton.className = "settings-reset";
   resetButton.type = "button";
@@ -118,6 +141,6 @@ export const createSettingsPanel = ({
   hint.className = "settings-hint";
   hint.textContent = "Timing is frame-based and saves automatically.";
 
-  panel.append(controls, actions, hint);
+  panel.append(modeRow, controls, actions, hint);
   host.appendChild(panel);
 };

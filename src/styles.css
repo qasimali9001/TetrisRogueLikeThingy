@@ -45,6 +45,22 @@ body {
   gap: 6px;
 }
 
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.mode-select {
+  border: 1px solid #2c4f72;
+  background: #12233c;
+  color: #d6e8ff;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
 .settings-row {
   display: grid;
   grid-template-columns: 88px 1fr 38px;

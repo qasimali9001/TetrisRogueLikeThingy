@@ -30,6 +30,37 @@ export interface QueueConfig {
   holdLockoutEnabled: boolean;
 }
 
+export interface DamageConfig {
+  lineClearBase: Record<1 | 2 | 3 | 4, number>;
+  tSpinBase: Record<1 | 2 | 3, number>;
+  comboMultiplierStep: number;
+  maxComboMultiplier: number;
+  b2bDifficultMultiplier: number;
+  perfectClearBonus: number;
+}
+
+export interface ShieldConfig {
+  tetrisShield: number;
+  tSpinDoubleShield: number;
+  tSpinTripleShield: number;
+  b2bBonusShield: number;
+}
+
+export interface EnemyAttackConfig {
+  intervalMs: number;
+  counterWindowMs: number;
+  packetAmount: number;
+  holePattern: number[];
+}
+
+export interface EnemyCombatConfig {
+  name: string;
+  maxHp: number;
+  damage: DamageConfig;
+  shield: ShieldConfig;
+  attack: EnemyAttackConfig;
+}
+
 export interface ControlActionBindings {
   moveLeft: string[];
   moveRight: string[];
@@ -59,6 +90,7 @@ export interface GameConfig {
   timing: TimingConfig;
   attack: AttackConfig;
   queue: QueueConfig;
+  combat: EnemyCombatConfig;
   settings: SettingsConfig;
 }
 
@@ -89,6 +121,30 @@ export const defaultGameConfig: GameConfig = {
     previewSize: 5,
     allowHold: true,
     holdLockoutEnabled: true
+  },
+  combat: {
+    name: "Training Core",
+    maxHp: 120,
+    damage: {
+      lineClearBase: { 1: 1, 2: 2, 3: 4, 4: 8 },
+      tSpinBase: { 1: 4, 2: 8, 3: 12 },
+      comboMultiplierStep: 0.15,
+      maxComboMultiplier: 2.5,
+      b2bDifficultMultiplier: 1.4,
+      perfectClearBonus: 8
+    },
+    shield: {
+      tetrisShield: 2,
+      tSpinDoubleShield: 2,
+      tSpinTripleShield: 4,
+      b2bBonusShield: 2
+    },
+    attack: {
+      intervalMs: 6500,
+      counterWindowMs: 2800,
+      packetAmount: 2,
+      holePattern: [4, 5, 3, 6, 2, 7, 1, 8]
+    }
   },
   settings: {
     controls: {

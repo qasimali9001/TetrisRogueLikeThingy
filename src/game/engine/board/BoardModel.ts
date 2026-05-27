@@ -93,6 +93,17 @@ export class BoardModel {
     }
   }
 
+  public addGarbageLine(holeColumn: number): boolean {
+    const overflowed = this.grid[0].some((cell) => cell !== null);
+    const clampedHole = Math.max(0, Math.min(this.width - 1, holeColumn));
+    const garbageRow: BoardCell[] = Array.from({ length: this.width }, (_, x) =>
+      x === clampedHole ? null : "Z"
+    );
+    this.grid.shift();
+    this.grid.push(garbageRow);
+    return overflowed;
+  }
+
   public getVisibleRows(): BoardCell[][] {
     return this.grid.slice(this.hiddenRows).map((row) => [...row]);
   }
